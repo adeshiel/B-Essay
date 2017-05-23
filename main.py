@@ -3,9 +3,8 @@
 import unirest
 
 class makeNewEssay(object):
-    """docstring for ."""
+    """makes a really silly essay"""
     def __init__(self, essay):
-        super(, self).__init__()
         self.essay = essay
         newEssay = ""
 
@@ -19,7 +18,7 @@ class makeNewEssay(object):
                     "Accept": "application/json"
                 }
             )
-            if(len(response.items()) != 0 && len(response.items()[1]) != 0):
+            if(len(response.items()) != 0 & len(response.items()[1]) != 0):
                 newmeanings = response.items()[1][1:]
                 if(len(newmeanings) > 1):
                     longest = newmeanings[0]
