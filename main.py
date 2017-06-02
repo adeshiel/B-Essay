@@ -17,28 +17,27 @@ class makeNewEssay(object):
         """ goes through each word in the essay to find a longer synonym and appends
         it to the new Essay """
         for x in self.essay:
-            array = unirest.get("https://wordsapiv1.p.mashape.com/words/{x}/synonyms",
+            response = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(x) +"/synonyms",
                 headers={
                     "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
                     "Accept": "application/json"
                 }
             )
-            response = json.loads(array)
-            print(response)
-            if(len(response.items()) != 0 & len(response.items()[1]) != 0):
-                newmeanings = response.items()[1][1:]
-                if(len(newmeanings) > 1):
-                    longest = newmeanings[0]
-                    for y in newmeanings:
-                        if(len(newmeanings[y]) >= longest):
-                            longest = newmeanings[y]
-                    newEssay = newEssay + longest + " "
+            new_essay = self.essay
+            if(len(response["synonyms"]) != None): #& len(response.items()[1]) != 0):
+                new_word = response["synonyms"][0]
+                if(len(response["synonyms"] > 1):
+                    longest = new_word
+                    for y in response["synonyms"]:
+                        if(len(y) >= longest):
+                            longest = y
+                    new_essay = new_essay + longest + " "
                 else:
-                    newEssay = newEssay + newmeanings[1] + " "
+                    new_essay = new_essay + new_word + " "
             else:
-                newEssay = newEssay + x + " "
+                new_essay = new_essay + x + " "
 
-        return newEssay
+        return new_essay
 
     def testingKey(self):
         word = self.essay
