@@ -42,13 +42,13 @@ class makeNewEssay(object):
 
     def testingKey(self):
         word = self.essay
-        array = unirest.get("https://wordsapiv1.p.mashape.com/words/{word}/synonyms",
+        array = unirest.get("https://wordsapiv1.p.mashape.com/words/" + str(word) + "/synonyms",
             headers={
                 "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
                 "Accept": "application/json"
             }
         )
-        return array.body()
+        return array._raw_body
 
 
 #response = unirest.get("https://wordsapiv1.p.mashape.com/words/{x}/synonyms",
