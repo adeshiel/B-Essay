@@ -2,6 +2,7 @@
 #Python 2.7
 import json
 import unirest
+from StringIO import StringIO
 from flask import Flask
 app = Flask(__name__)
 
@@ -16,8 +17,7 @@ class makeNewEssay(object):
         """ goes through each word in the essay to find a longer synonym and appends
         it to the new Essay """
         for x in self.essay:
-            word = x
-            array = unirest.get("https://wordsapiv1.p.mashape.com/words/{word}/synonyms",
+            array = unirest.get("https://wordsapiv1.p.mashape.com/words/{x}/synonyms",
                 headers={
                     "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
                     "Accept": "application/json"
@@ -40,6 +40,17 @@ class makeNewEssay(object):
 
         return newEssay
 
+    def testingKey(self):
+        word = self.essay
+        array = unirest.get("https://wordsapiv1.p.mashape.com/words/{word}/synonyms",
+            headers={
+                "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
+                "Accept": "application/json"
+            }
+        )
+        return array.body()
+
+
 #response = unirest.get("https://wordsapiv1.p.mashape.com/words/{x}/synonyms",
 #    headers={
 #        "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
@@ -47,5 +58,6 @@ class makeNewEssay(object):
 #    }
 #)
 
-test = makeNewEssay("Help me.")
-print(test.pickLongestSynonym())
+test = makeNewEssay("Help")
+#print(test.pickLongestSynonym())
+print(test.testingKey())
