@@ -23,8 +23,19 @@ class makeNewEssay(object):
         self.new_essay = ""
         self.word_target = word_target
         # TODO: fully implement word target
-        # TODO: implement definitions
+        # TODO: implement punctuation recognition
         # TODO: Maybe move the API call so that it doesn't run too many times, dunno if it'll make much difference though
+
+        placeholder = []
+        for z in self.essay:
+            if(z[-1] in ["!", "?", ".", "!?", "?!"]):
+                # i wannna just insert it to the next place but then it'll get read again so let's make a temp variable
+                placeholder.append(z[:-1])
+                placeholder.append(z[-1])
+            else:
+                placeholder.append(z)
+        self.essay = placeholder
+    #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; NEED TO MAKE ANOTHER CASE FOR THIS
 
     def pickLongestSynonym(self):
         """ goes through each word in the essay to find a longer synonym and appends
@@ -59,39 +70,61 @@ class makeNewEssay(object):
     def extendByDefinition(self):
         """ extends the word count of the essay by finding a rare-enough word and adding the definition """
         temp = ""
+        ignore = []
+        punctuation = ["!", "?", ".", "!?", "?!"]
+        print("Initial: ", self.essay)
         for x in range(len(self.essay)):
-            ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
-                headers={
-                    "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
-                    "Accept": "application/json"
-                }
-            )
-            freq = json.loads(ret1._raw_body)
-
-            if(freq['frequency']['zipf'] <= 2.5):
-                ret2 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]),
+            #print("Running: ", self.essay[x])
+            pun = ""
+            print(self.essay)
+            if(self.essay[x][:-1] not in ignore):
+                if(self.essay[x][-1] in punctuation):
+                    pun = self.essay[x][-1]
+                    #print("pun: ", pun)
+                    self.essay[x] = self.essay[x][:-1]
+                ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
                     headers={
                         "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
                         "Accept": "application/json"
                     }
                 )
-                defin = json.loads(ret2._raw_body)
-                longest = ""
-                for y in defin['results']:
-                    if(len(y['definition']) >= len(longest)):
-                        longest = y['definition']
-                temp = longest +", "
-                self.essay[x] += ","
-                self.essay.insert(x+1, temp)
+                freq = json.loads(ret1._raw_body)
 
-    def createdEssay(self):
-        self.pickLongestSynonym()
+                if(freq['frequency']['zipf'] <= 2.5):
+                    ret2 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]),
+                        headers={
+                            "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
+                            "Accept": "application/json"
+                        }
+                    )
+                    defin = json.loads(ret2._raw_body)
+                    longest = ""
+                    for y in defin['results']:
+                        if(len(y['definition']) >= len(longest)):
+                            longest = y['definition']
+                    if(self.essay[x+1] in ["!", "?", ".", "!?", "?!"]):
+                        temp = longest + self.essay[x+1]
+                        #print(temp)
+                    else:
+                        temp = longest +", "
+                        #print(temp)
+
+                    ignore.append(longest)
+                    #print(ignore)
+                    self.essay[x] += ", or"
+                    self.essay.insert(x+1, temp)
+                    self.essay.remove(self.essay[x+2])
+                    #print("inner test", self.essay)
+        print(self.essay)
+
+    def createEssay(self):
+        #self.pickLongestSynonym()
         self.extendByDefinition()
         return_essay = ' '.join(self.essay)
         return return_essay
 
 
 
-test = makeNewEssay("Although the wind blows the whale will continue to be homogeneous", 6)
-print(test.createdEssay())
+test = makeNewEssay("Although the wind blows the whale will continue to be homogeneous.", 6)
+print(test.createEssay())
 #print(test.testingKey())
