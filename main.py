@@ -14,16 +14,17 @@ m1 = m.read()
 mlist = m1.splitlines()
 names = flist + mlist
 
-print(names)
 
 @app.route('/')
 class makeNewEssay(object):
     """makes a really silly essay"""
     def __init__(self, essay, word_target):
         self.essay = essay.split()
-        new_essay = ""
-        self.new_essay = new_essay
+        self.new_essay = ""
         self.word_target = word_target
+        # TODO: fully implement word target
+        # TODO: implement definitions
+        # TODO: Maybe move the API call so that it doesn't run too many times, dunno if it'll make much difference though
 
     def pickLongestSynonym(self):
         """ goes through each word in the essay to find a longer synonym and appends
@@ -36,10 +37,8 @@ class makeNewEssay(object):
                 }
             )
             response = json.loads(ret._raw_body)
-            #synonym = json.loads(response)
-            #return
             if(x not in names):
-                if(len(response['synonyms']) != 0): #& len(response.items()[1]) != 0):
+                if(len(response['synonyms']) != 0):
                     new_word = response['synonyms'][0]
                     if(len(response['synonyms']) > 1):
                         longest = new_word
@@ -54,9 +53,45 @@ class makeNewEssay(object):
             else:
                 self.new_essay = self.new_essay + x + " "
 
+            self.essay = self.new_essay.split()
         print(self.new_essay)
 
+    def extendByDefinition(self):
+        """ extends the word count of the essay by finding a rare-enough word and adding the definition """
+        temp = ""
+        for x in range(len(self.essay)):
+            ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
+                headers={
+                    "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
+                    "Accept": "application/json"
+                }
+            )
+            freq = json.loads(ret1._raw_body)
 
-#test = makeNewEssay("Please excuse my dear Aunt Sally", 6)
-#print(test.pickLongestSynonym())
+            if(freq['frequency']['zipf'] <= 2.5):
+                ret2 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]),
+                    headers={
+                        "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
+                        "Accept": "application/json"
+                    }
+                )
+                defin = json.loads(ret2._raw_body)
+                longest = ""
+                for y in defin['results']:
+                    if(len(y['definition']) >= len(longest)):
+                        longest = y['definition']
+                temp = longest +", "
+                self.essay[x] += ","
+                self.essay.insert(x+1, temp)
+
+    def createdEssay(self):
+        self.pickLongestSynonym()
+        self.extendByDefinition()
+        return_essay = ' '.join(self.essay)
+        return return_essay
+
+
+
+test = makeNewEssay("Although the wind blows the whale will continue to be homogeneous", 6)
+print(test.createdEssay())
 #print(test.testingKey())
