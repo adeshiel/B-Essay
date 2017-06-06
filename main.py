@@ -7,19 +7,14 @@ from flask import Flask
 app = Flask(__name__)
 
 f = open('female.txt', 'r')
+f1 = f.read()
+flist = f1.splitlines()
 m = open('male.txt', 'r')
-fsplit = f.readline()
-names = []
-name = ""
-
-for line in f:
-    #print(line)
-    name = ''.join(line)
-    names.append(line)
-
+m1 = m.read()
+mlist = m1.splitlines()
+names = flist + mlist
 
 print(names)
-
 
 @app.route('/')
 class makeNewEssay(object):
@@ -43,7 +38,7 @@ class makeNewEssay(object):
             response = json.loads(ret._raw_body)
             #synonym = json.loads(response)
             #return
-            if(x not in f.read()):
+            if(x not in names):
                 if(len(response['synonyms']) != 0): #& len(response.items()[1]) != 0):
                     new_word = response['synonyms'][0]
                     if(len(response['synonyms']) > 1):
@@ -56,22 +51,12 @@ class makeNewEssay(object):
                         self.new_essay = self.new_essay + new_word + " "
                 else:
                     self.new_essay = self.new_essay + x + " "
+            else:
+                self.new_essay = self.new_essay + x + " "
 
         print(self.new_essay)
 
-    def testingKey(self):
-        word = self.essay
-        array = unirest.get("https://wordsapiv1.p.mashape.com/words/" + str(word) + "/synonyms",
-            headers={
-                "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
-                "Accept": "application/json"
-            }
-        )
-        return array._raw_body
 
-
-#test = makeNewEssay("Please help my dear Aunt Sally")
+#test = makeNewEssay("Please excuse my dear Aunt Sally", 6)
 #print(test.pickLongestSynonym())
 #print(test.testingKey())
-
-print(f.readline())
