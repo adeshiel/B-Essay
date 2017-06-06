@@ -6,13 +6,29 @@ from StringIO import StringIO
 from flask import Flask
 app = Flask(__name__)
 
+f = open('female.txt', 'r')
+m = open('male.txt', 'r')
+fsplit = f.readline()
+names = []
+name = ""
+
+for line in f:
+    #print(line)
+    name = ''.join(line)
+    names.append(line)
+
+
+print(names)
+
+
 @app.route('/')
 class makeNewEssay(object):
     """makes a really silly essay"""
-    def __init__(self, essay):
+    def __init__(self, essay, word_target):
         self.essay = essay.split()
         new_essay = ""
         self.new_essay = new_essay
+        self.word_target = word_target
 
     def pickLongestSynonym(self):
         """ goes through each word in the essay to find a longer synonym and appends
@@ -26,19 +42,20 @@ class makeNewEssay(object):
             )
             response = json.loads(ret._raw_body)
             #synonym = json.loads(response)
-            #return synonym
-            if(len(response['synonyms']) != 0): #& len(response.items()[1]) != 0):
-                new_word = response['synonyms'][0]
-                if(len(response['synonyms']) > 1):
-                    longest = new_word
-                    for y in response['synonyms']:
-                        if(len(y) >= longest):
-                            longest = y
-                    self.new_essay = self.new_essay + longest + " "
+            #return
+            if(x not in f.read()):
+                if(len(response['synonyms']) != 0): #& len(response.items()[1]) != 0):
+                    new_word = response['synonyms'][0]
+                    if(len(response['synonyms']) > 1):
+                        longest = new_word
+                        for y in response['synonyms']:
+                            if(len(y) >= longest):
+                                longest = y
+                        self.new_essay = self.new_essay + longest + " "
+                    else:
+                        self.new_essay = self.new_essay + new_word + " "
                 else:
-                    self.new_essay = self.new_essay + new_word + " "
-            else:
-                self.new_essay = self.new_essay + x + " "
+                    self.new_essay = self.new_essay + x + " "
 
         print(self.new_essay)
 
@@ -53,13 +70,8 @@ class makeNewEssay(object):
         return array._raw_body
 
 
-#response = unirest.get("https://wordsapiv1.p.mashape.com/words/{x}/synonyms",
-#    headers={
-#        "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
-#        "Accept": "application/json"
-#    }
-#)
-
-test = makeNewEssay("Please help my dear Aunt Sally")
-print(test.pickLongestSynonym())
+#test = makeNewEssay("Please help my dear Aunt Sally")
+#print(test.pickLongestSynonym())
 #print(test.testingKey())
+
+print(f.readline())
