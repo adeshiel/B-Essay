@@ -21,15 +21,16 @@ class makeNewEssay(object):
     def __init__(self, essay, word_target):
         self.essay = essay.split()
         self.new_essay = ""
+        self.final_essay = ""
         self.word_target = word_target
         # TODO: fully implement word target
-        # TODO: implement punctuation recognition
+        # TODO: implement punctuation recognition for synonym
+        # TODO: make a new separate function that appends punctuation
         # TODO: Maybe move the API call so that it doesn't run too many times, dunno if it'll make much difference though
 
         placeholder = []
         for z in self.essay:
-            if(z[-1] in ["!", "?", ".", "!?", "?!", ","]):
-                # i wannna just insert it to the next place but then it'll get read again so let's make a temp variable
+            if(z[-1] in punctuation):
                 placeholder.append(z[:-1])
                 placeholder.append(z[-1])
             else:
@@ -40,16 +41,27 @@ class makeNewEssay(object):
     def pickLongestSynonym(self):
         """ goes through each word in the essay to find a longer synonym and appends
         it to the new Essay """
-
         for x in self.essay:
-            if(x not in names):
+            print("Running: " + x)
+            print(self.new_essay)
+            if(x in punctuation):
+                #self.essay[self.essay.index(x)-1] += x
+                self.new_essay = self.new_essay[:-1] + x + " "
+                self.essay.remove(x)
+                continue
+
+            elif(x not in names):
                 ret = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(x) +"/synonyms",
                     headers={
                         "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
                         "Accept": "application/json"
                     }
                 )
-                response = json.loads(ret._raw_body)
+                try:
+                    response = json.loads(ret._raw_body)
+                except ValueError:
+                    continue
+
                 if(len(response['synonyms']) != 0):
                     new_word = response['synonyms'][0]
                     if(len(response['synonyms']) > 1):
@@ -65,7 +77,7 @@ class makeNewEssay(object):
             else:
                 self.new_essay = self.new_essay + x + " "
 
-            self.essay = self.new_essay.split()
+        self.essay = self.new_essay.split()
         print(self.new_essay)
 
     def extendByDefinition(self):
@@ -132,10 +144,17 @@ class makeNewEssay(object):
                         #print("inner test", self.essay)
 
         print(self.essay)
+    
+    def joinEssay(self):
+        for word in essay:
+            if word in punctuation:
+                self.final_essay = self.final_essay[:-1] + word + " "
+            else:
+                self.final_essay += word + " "
 
     def createEssay(self):
-        #self.pickLongestSynonym()
-        self.extendByDefinition()
+        self.pickLongestSynonym()
+        #self.extendByDefinition()
         return_essay = ' '.join(self.essay)
         return return_essay
 
