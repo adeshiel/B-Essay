@@ -79,7 +79,7 @@ class makeNewEssay(object):
 
             if(self.essay[x] in punctuation):
                 self.essay[x-1] += self.essay[x]
-                self.essay[x] = '' 
+                self.essay[x] = ''
                 continue
 
             pun = ""
@@ -102,7 +102,6 @@ class makeNewEssay(object):
                     freq = json.loads(ret1._raw_body)
                 except ValueError:
                     continue
-                print(freq)
 
                 if('frequency' in freq.keys() and freq['frequency']['zipf'] <= 2.5):
                     ret2 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]),
@@ -122,13 +121,10 @@ class makeNewEssay(object):
 
                         if(self.essay[x+1] in punctuation):
                             temp = longest + self.essay[x+1]
-                            #print(temp)
                         else:
                             temp = longest +", "
-                            #print(temp)
 
                         ignore.append(longest)
-                        #print(ignore)
 
                         self.essay[x] += ", or"
                         self.essay.insert(x+1, temp)
