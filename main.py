@@ -6,13 +6,10 @@ from StringIO import StringIO
 from flask import Flask
 app = Flask(__name__)
 
-f = open('female.txt', 'r')
-f1 = f.read()
-flist = f1.splitlines()
-m = open('male.txt', 'r')
-m1 = m.read()
-mlist = m1.splitlines()
-names = flist + mlist
+
+name = open('names.txt', 'r')
+n = name.read()
+names = n.splitlines()
 punctuation = ["!", "?", ".", "!?", "?!", ","]
 
 @app.route('/')
@@ -24,8 +21,6 @@ class makeNewEssay(object):
         self.final_essay = ""
         self.word_target = word_target
         # TODO: fully implement word target
-        # TODO: implement punctuation recognition for synonym
-        # TODO: make a new separate function that appends punctuation
         # TODO: Maybe move the API call so that it doesn't run too many times, dunno if it'll make much difference though
 
         placeholder = []
@@ -38,14 +33,25 @@ class makeNewEssay(object):
         self.essay = placeholder
     #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; NEED TO MAKE ANOTHER CASE FOR THIS
 
+    def separatePunct(self):
+        """ Separates the punctuation from the string and places it next in the list,
+            can probably be optimized with insert or list comprehension """
+        placeholder = []
+        for z in self.essay:
+            if(z[-1] in punctuation):
+                placeholder.append(z[:-1])
+                placeholder.append(z[-1])
+            else:
+                placeholder.append(z)
+        self.essay = placeholder
+
     def pickLongestSynonym(self):
         """ goes through each word in the essay to find a longer synonym and appends
         it to the new Essay """
+        self.essay.separatePunct()
         for x in self.essay:
-            #print("Running: " + x)
-            #print(self.new_essay)
+
             if(x in punctuation):
-                #self.essay[self.essay.index(x)-1] += x
                 self.new_essay = self.new_essay[:-1] + x + " "
                 self.essay.remove(x)
                 continue
@@ -78,16 +84,13 @@ class makeNewEssay(object):
                 self.new_essay = self.new_essay + x + " "
 
         self.essay = self.new_essay.split()
-        #print(self.new_essay)
 
     def extendByDefinition(self):
         """ extends the word count of the essay by finding a rare-enough word and adding the definition """
         temp = ""
         ignore = []
-        #print("Initial: ", self.essay)
 
         for x in range(len(self.essay)):
-            #print("Running: ", self.essay[x])
 
             if(self.essay[x] in punctuation):
                 self.essay[x-1] += self.essay[x]
@@ -95,12 +98,10 @@ class makeNewEssay(object):
                 continue
 
             pun = ""
-            #print(self.essay)
 
             if(self.essay[x][:-1] not in ignore or self.essay[x] not in names):
                 if(self.essay[x][-1] in punctuation):
                     pun = self.essay[x][-1]
-                    #print("pun: ", pun)
                     self.essay[x] = self.essay[x][:-1]
 
                 ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
@@ -155,8 +156,9 @@ class makeNewEssay(object):
     def createEssay(self):
         while((len(self.essay)-self.essay.count(punctuation)) < self.word_target):
             self.pickLongestSynonym()
-            self.extendByDefinition()
             print(self.essay)
+            self.extendByDefinition()
+            #print(self.essay)
         #return_essay = ' '.join(self.essay)
         self.joinEssay()
         return_essay = self.final_essay
@@ -164,7 +166,7 @@ class makeNewEssay(object):
 
 
 
-test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
-#test = makeNewEssay("The quick brown fox jumps over the lazy dog", 6)
+#test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
+test = makeNewEssay("Abby is superbly kind.", 6)
 print(test.createEssay())
 #print(test.testingKey())
