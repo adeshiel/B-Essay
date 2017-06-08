@@ -42,8 +42,8 @@ class makeNewEssay(object):
         """ goes through each word in the essay to find a longer synonym and appends
         it to the new Essay """
         for x in self.essay:
-            print("Running: " + x)
-            print(self.new_essay)
+            #print("Running: " + x)
+            #print(self.new_essay)
             if(x in punctuation):
                 #self.essay[self.essay.index(x)-1] += x
                 self.new_essay = self.new_essay[:-1] + x + " "
@@ -78,16 +78,16 @@ class makeNewEssay(object):
                 self.new_essay = self.new_essay + x + " "
 
         self.essay = self.new_essay.split()
-        print(self.new_essay)
+        #print(self.new_essay)
 
     def extendByDefinition(self):
         """ extends the word count of the essay by finding a rare-enough word and adding the definition """
         temp = ""
         ignore = []
-        print("Initial: ", self.essay)
+        #print("Initial: ", self.essay)
 
         for x in range(len(self.essay)):
-            print("Running: ", self.essay[x])
+            #print("Running: ", self.essay[x])
 
             if(self.essay[x] in punctuation):
                 self.essay[x-1] += self.essay[x]
@@ -95,7 +95,7 @@ class makeNewEssay(object):
                 continue
 
             pun = ""
-            print(self.essay)
+            #print(self.essay)
 
             if(self.essay[x][:-1] not in ignore or self.essay[x] not in names):
                 if(self.essay[x][-1] in punctuation):
@@ -141,26 +141,30 @@ class makeNewEssay(object):
                         self.essay[x] += ", or"
                         self.essay.insert(x+1, temp)
                         self.essay.remove(self.essay[x+2])
-                        #print("inner test", self.essay)
 
-        print(self.essay)
-    
+
+        #print(self.essay)
+
     def joinEssay(self):
-        for word in essay:
-            if word in punctuation:
-                self.final_essay = self.final_essay[:-1] + word + " "
+        for y in self.essay:
+            if y in punctuation:
+                self.final_essay = self.final_essay[:-1] + y + " "
             else:
-                self.final_essay += word + " "
+                self.final_essay += y + " "
 
     def createEssay(self):
-        self.pickLongestSynonym()
-        #self.extendByDefinition()
-        return_essay = ' '.join(self.essay)
+        while((len(self.essay)-self.essay.count(punctuation)) < self.word_target):
+            self.pickLongestSynonym()
+            self.extendByDefinition()
+            print(self.essay)
+        #return_essay = ' '.join(self.essay)
+        self.joinEssay()
+        return_essay = self.final_essay
         return return_essay
 
 
 
-test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 6)
+test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
 #test = makeNewEssay("The quick brown fox jumps over the lazy dog", 6)
 print(test.createEssay())
 #print(test.testingKey())
