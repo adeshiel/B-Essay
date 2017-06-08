@@ -13,7 +13,7 @@ m = open('male.txt', 'r')
 m1 = m.read()
 mlist = m1.splitlines()
 names = flist + mlist
-
+punctuation = ["!", "?", ".", "!?", "?!", ","]
 
 @app.route('/')
 class makeNewEssay(object):
@@ -28,7 +28,7 @@ class makeNewEssay(object):
 
         placeholder = []
         for z in self.essay:
-            if(z[-1] in ["!", "?", ".", "!?", "?!"]):
+            if(z[-1] in ["!", "?", ".", "!?", "?!", ","]):
                 # i wannna just insert it to the next place but then it'll get read again so let's make a temp variable
                 placeholder.append(z[:-1])
                 placeholder.append(z[-1])
@@ -40,15 +40,16 @@ class makeNewEssay(object):
     def pickLongestSynonym(self):
         """ goes through each word in the essay to find a longer synonym and appends
         it to the new Essay """
+
         for x in self.essay:
-            ret = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(x) +"/synonyms",
-                headers={
-                    "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
-                    "Accept": "application/json"
-                }
-            )
-            response = json.loads(ret._raw_body)
             if(x not in names):
+                ret = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(x) +"/synonyms",
+                    headers={
+                        "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
+                        "Accept": "application/json"
+                    }
+                )
+                response = json.loads(ret._raw_body)
                 if(len(response['synonyms']) != 0):
                     new_word = response['synonyms'][0]
                     if(len(response['synonyms']) > 1):
@@ -71,50 +72,69 @@ class makeNewEssay(object):
         """ extends the word count of the essay by finding a rare-enough word and adding the definition """
         temp = ""
         ignore = []
-        punctuation = ["!", "?", ".", "!?", "?!"]
         print("Initial: ", self.essay)
+
         for x in range(len(self.essay)):
-            #print("Running: ", self.essay[x])
+            print("Running: ", self.essay[x])
+
+            if(self.essay[x] in punctuation):
+                self.essay[x-1] += self.essay[x]
+                self.essay[x] = '' 
+                continue
+
             pun = ""
             print(self.essay)
-            if(self.essay[x][:-1] not in ignore):
+
+            if(self.essay[x][:-1] not in ignore or self.essay[x] not in names):
                 if(self.essay[x][-1] in punctuation):
                     pun = self.essay[x][-1]
                     #print("pun: ", pun)
                     self.essay[x] = self.essay[x][:-1]
+
                 ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
                     headers={
                         "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
                         "Accept": "application/json"
                     }
                 )
-                freq = json.loads(ret1._raw_body)
 
-                if(freq['frequency']['zipf'] <= 2.5):
+                try:
+                    freq = json.loads(ret1._raw_body)
+                except ValueError:
+                    continue
+                print(freq)
+
+                if('frequency' in freq.keys() and freq['frequency']['zipf'] <= 2.5):
                     ret2 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]),
                         headers={
                             "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
                             "Accept": "application/json"
                         }
                     )
-                    defin = json.loads(ret2._raw_body)
-                    longest = ""
-                    for y in defin['results']:
-                        if(len(y['definition']) >= len(longest)):
-                            longest = y['definition']
-                    if(self.essay[x+1] in ["!", "?", ".", "!?", "?!"]):
-                        temp = longest + self.essay[x+1]
-                        #print(temp)
-                    else:
-                        temp = longest +", "
-                        #print(temp)
 
-                    ignore.append(longest)
-                    #print(ignore)
-                    self.essay[x] += ", or"
-                    self.essay.insert(x+1, temp)
-                    self.essay.remove(self.essay[x+2])
-                    #print("inner test", self.essay)
+                    defin = json.loads(ret2._raw_body)
+
+                    if('definition' in defin.keys()):
+                        longest = ""
+                        for y in defin['results']:
+                            if(len(y['definition']) >= len(longest)):
+                                longest = y['definition']
+
+                        if(self.essay[x+1] in punctuation):
+                            temp = longest + self.essay[x+1]
+                            #print(temp)
+                        else:
+                            temp = longest +", "
+                            #print(temp)
+
+                        ignore.append(longest)
+                        #print(ignore)
+
+                        self.essay[x] += ", or"
+                        self.essay.insert(x+1, temp)
+                        self.essay.remove(self.essay[x+2])
+                        #print("inner test", self.essay)
+
         print(self.essay)
 
     def createEssay(self):
@@ -125,6 +145,7 @@ class makeNewEssay(object):
 
 
 
-test = makeNewEssay("Although the wind blows the whale will continue to be homogeneous.", 6)
+test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 6)
+#test = makeNewEssay("The quick brown fox jumps over the lazy dog", 6)
 print(test.createEssay())
 #print(test.testingKey())
