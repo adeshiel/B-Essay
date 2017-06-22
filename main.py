@@ -38,7 +38,6 @@ class makeNewEssay(object):
         self.final_essay = ""
         self.word_target = word_target
         self.rarity = rarity
-        # TODO: fully implement word target
         # TODO: Maybe move the API call so that it doesn't run too many times, or add more checks before the call
         # TODO: Use a book or novel as a comparison, or something that would help it measure how legible it is
                 # i.e. check that nouns are next to verbs, or adverbs next to verbs - just basic grammar rules
@@ -100,24 +99,18 @@ class makeNewEssay(object):
                 self.new_essay = self.new_essay + x + " "
 
         self.essay = self.new_essay.split()
-    # TODO: The function still considers names - fix that
-    # TODO: The function doesnt hit definition - fix that too
+
+
     def extendByDefinition(self):
         """ extends the word count of the essay by finding a rare-enough word and adding the definition """
         temp = ""
         ignore = []
         pun = ""
         for x in range(len(self.essay)):
-            print(self.essay[x] in ignore)
-            print(self.essay)
-            print("Ignore:", ignore)
-            print("Current: ", self.essay[x])
             if(self.essay[x] not in ignore and self.essay[x][:-1] not in ignore and self.essay[x].title() not in names):
-                if(self.essay[x][-1] in punctuation): #### THE BUGGIE IS HERE
-                    print("Pls: ", self.essay)
+                if(self.essay[x][-1] in punctuation):
                     pun = self.essay[x][-1]
                     self.essay[x] = self.essay[x][:-1]
-                    print("Help: ", self.essay)
 
                 ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
                     headers={
@@ -145,7 +138,6 @@ class makeNewEssay(object):
                         longest = ""
                         if(len(defin['results']) == 1):
                             longest = defin['results'][0]['definition']
-                            print(longest)
                         else:
                             for y in defin['results']:
                                 if(len(y['definition']) >= len(longest)):
@@ -160,13 +152,13 @@ class makeNewEssay(object):
                         ignore.append(temp)
 
                         self.essay[x] += ", or"
-                        print("Check", self.essay)
                         self.essay.insert(x+1, temp)
                 else:
                     self.essay[x] += pun
                         #self.essay.remove(self.essay[x+2])
                         #self.essay[x+2] += pun
 
+    # TODO: implement grammar rules
     def grammarCheck(self):
         self.essay.separatePunct()
 
@@ -174,7 +166,6 @@ class makeNewEssay(object):
 
     def joinEssay(self): #Do i need this?
         for y in self.essay:
-
             if y in punctuation:
                 self.final_essay = self.final_essay[:-1] + y + " "
             else:
@@ -188,11 +179,9 @@ class makeNewEssay(object):
                 true_length += 1
         while((len(self.essay)-self.essay.count(punctuation)) < self.word_target):
             self.pickLongestSynonym()
-            print("After syn:", self.essay)
             test = " ".join(self.essay)
             self.essay = test.split()
             self.extendByDefinition()
-            print("After def:", self.essay)
             test = " ".join(self.essay)
             self.essay = test.split()
 
@@ -204,6 +193,6 @@ class makeNewEssay(object):
 
 
 #test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
-test = makeNewEssay("Abby is superbly kind.", 6, 3)
+test = makeNewEssay("Peter Piper picked a pack of pickled peppers.", 10, 4)
 print(test.createEssay())
 #print(test.testingKey())
