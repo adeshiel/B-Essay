@@ -17,9 +17,9 @@ names = n.splitlines()
 punctuation = ["!", "?", ".", "!?", "?!", ","]
 indef_def_articles = ["the", "a", "an"]
 coord_conjuctions = ["and", "but", "for", "nor", "or", "so", "yet"]
-and_conjunctions = ["also", "besides", "furthermore", "likewise", "moreover"]
-but_conjunctions = ["however", "nevertheless", "nonetheless", "still","conversely","instead","otherwise","rather"]
-so_conjunctions = ["accordingly", "consequently", "hence", "meanwhile", "then","therefore","thus"]
+and_conjunctions = ["and","also", "besides", "furthermore", "likewise", "moreover"]
+but_conjunctions = ["but","however", "nevertheless", "nonetheless", "still","conversely","instead","otherwise","rather"]
+so_conjunctions = ["so","accordingly", "consequently", "hence", "meanwhile", "then","therefore","thus"]
 time_conjunctions = ["after","as long as", "as soon as", "before", "by the time", "now that", "once", "since", "till", "until", "when", "whenever", "while"]
 concession_conjunctions = ["though", "although", "even though", "while"]
 condition_conjunctions = ["if", "only if", "unless", "until", "provided that", "assuming that", "even if", "in case", "in case that", "lest"]
@@ -27,6 +27,7 @@ comparison_conjunctions = ["than", "rather than", "whether", "as much as", "wher
 reason_conjunctions = ["because", "since", "so that", "in order to", "in order that", "why"]
 manner_conjunctions = ["how","as though","as if"]
 place_conjunctions = ["where","wherever"]
+
 
 @app.route('/')
 class makeNewEssay(object):
@@ -43,7 +44,7 @@ class makeNewEssay(object):
                 # i.e. check that nouns are next to verbs, or adverbs next to verbs - just basic grammar rules
                 # We can do this by looking in the partOfSpeech portion of the chosen definition
 
-        self.essay.separatePunct()
+        self.separatePunct()
     #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; MAKE ANOTHER CASE FOR THIS
 
     def separatePunct(self):
@@ -63,7 +64,7 @@ class makeNewEssay(object):
     def pickLongestSynonym(self):
         """ goes through each word in the essay to find a longer synonym and appends
         it to the new essay """
-        self.essay.separatePunct()
+        self.separatePunct()
         for x in self.essay:
 
             if(x in punctuation):
@@ -106,7 +107,6 @@ class makeNewEssay(object):
         ignore = []
 
         for x in range(len(self.essay)):
-
             if(self.essay[x] in punctuation):
                 self.essay[x-1] += self.essay[x]
                 self.essay[x] = ''
@@ -115,9 +115,12 @@ class makeNewEssay(object):
             pun = ""
 
             if(self.essay[x][:-1] not in ignore or self.essay[x] not in names):
+                print("Before this point:", self.essay)
                 if(self.essay[x][-1] in punctuation):
                     pun = self.essay[x][-1]
                     self.essay[x] = self.essay[x][:-1]
+                    print("After this point:", self.essay)
+                ### Need to add pun back
 
                 ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
                     headers={
@@ -157,6 +160,7 @@ class makeNewEssay(object):
                         self.essay[x] += ", or"
                         self.essay.insert(x+1, temp)
                         self.essay.remove(self.essay[x+2])
+            self.essay[x] += pun
 
     def grammarCheck(self):
         self.essay.separatePunct()
@@ -165,6 +169,7 @@ class makeNewEssay(object):
 
     def joinEssay(self): #Do i need this?
         for y in self.essay:
+
             if y in punctuation:
                 self.final_essay = self.final_essay[:-1] + y + " "
             else:
@@ -175,6 +180,7 @@ class makeNewEssay(object):
             self.pickLongestSynonym()
             print(self.essay)
             self.extendByDefinition()
+            print(self.essay)
             #print(self.essay)
         #return_essay = ' '.join(self.essay)
         self.joinEssay()
@@ -185,6 +191,6 @@ class makeNewEssay(object):
 
 
 #test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
-test = makeNewEssay("Abby is superbly kind.", 6)
+test = makeNewEssay("Abby is superbly kind.", 6, 5)
 print(test.createEssay())
 #print(test.testingKey())
