@@ -1,53 +1,68 @@
 # Main functions
 #Python 2.7
+
 import json
 import unirest
 from StringIO import StringIO
 from flask import Flask
 app = Flask(__name__)
 
+# TODO: fully implement Flask
 
 name = open('names.txt', 'r')
 n = name.read()
 names = n.splitlines()
+
+#grammar
 punctuation = ["!", "?", ".", "!?", "?!", ","]
+indef_def_articles = ["the", "a", "an"]
+coord_conjuctions = ["and", "but", "for", "nor", "or", "so", "yet"]
+and_conjunctions = ["also", "besides", "furthermore", "likewise", "moreover"]
+but_conjunctions = ["however", "nevertheless", "nonetheless", "still","conversely","instead","otherwise","rather"]
+so_conjunctions = ["accordingly", "consequently", "hence", "meanwhile", "then","therefore","thus"]
+time_conjunctions = ["after","as long as", "as soon as", "before", "by the time", "now that", "once", "since", "till", "until", "when", "whenever", "while"]
+concession_conjunctions = ["though", "although", "even though", "while"]
+condition_conjunctions = ["if", "only if", "unless", "until", "provided that", "assuming that", "even if", "in case", "in case that", "lest"]
+comparison_conjunctions = ["than", "rather than", "whether", "as much as", "whereas"]
+reason_conjunctions = ["because", "since", "so that", "in order to", "in order that", "why"]
+manner_conjunctions = ["how","as though","as if"]
+place_conjunctions = ["where","wherever"]
 
 @app.route('/')
 class makeNewEssay(object):
     """makes a really silly essay"""
-    def __init__(self, essay, word_target):
+    def __init__(self, essay, word_target, rarity):
         self.essay = essay.split()
         self.new_essay = ""
         self.final_essay = ""
         self.word_target = word_target
+        self.rarity = rarity
         # TODO: fully implement word target
-        # TODO: Maybe move the API call so that it doesn't run too many times, dunno if it'll make much difference though
+        # TODO: Maybe move the API call so that it doesn't run too many times, or add more checks before the call
+        # TODO: Use a book or novel as a comparison, or something that would help it measure how legible it is
+                # i.e. check that nouns are next to verbs, or adverbs next to verbs - just basic grammar rules
+                # We can do this by looking in the partOfSpeech portion of the chosen definition
 
-        placeholder = []
-        for z in self.essay:
-            if(z[-1] in punctuation):
-                placeholder.append(z[:-1])
-                placeholder.append(z[-1])
-            else:
-                placeholder.append(z)
-        self.essay = placeholder
-    #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; NEED TO MAKE ANOTHER CASE FOR THIS
+        self.essay.separatePunct()
+    #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; MAKE ANOTHER CASE FOR THIS
 
     def separatePunct(self):
         """ Separates the punctuation from the string and places it next in the list,
             can probably be optimized with insert or list comprehension """
         placeholder = []
         for z in self.essay:
-            if(z[-1] in punctuation):
+            if(z[-1] in punctuation and len(z) >= 2):
                 placeholder.append(z[:-1])
                 placeholder.append(z[-1])
             else:
                 placeholder.append(z)
         self.essay = placeholder
 
+
+# TODO: Fix so that it doesn't make use of new_essay but just rebuilds essay - maybe
     def pickLongestSynonym(self):
         """ goes through each word in the essay to find a longer synonym and appends
-        it to the new Essay """
+        it to the new essay """
         self.essay.separatePunct()
         for x in self.essay:
 
@@ -116,7 +131,7 @@ class makeNewEssay(object):
                 except ValueError:
                     continue
 
-                if('frequency' in freq.keys() and freq['frequency']['zipf'] <= 2.5):
+                if('frequency' in freq.keys() and freq['frequency']['zipf'] <= self.rarity): # ranged 1-7, 1 being very rare and 7 being normal
                     ret2 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]),
                         headers={
                             "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
@@ -143,10 +158,12 @@ class makeNewEssay(object):
                         self.essay.insert(x+1, temp)
                         self.essay.remove(self.essay[x+2])
 
+    def grammarCheck(self):
+        self.essay.separatePunct()
 
-        #print(self.essay)
+        print("")
 
-    def joinEssay(self):
+    def joinEssay(self): #Do i need this?
         for y in self.essay:
             if y in punctuation:
                 self.final_essay = self.final_essay[:-1] + y + " "
@@ -164,6 +181,7 @@ class makeNewEssay(object):
         return_essay = self.final_essay
         return return_essay
 
+#!!! End of class !!!
 
 
 #test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
