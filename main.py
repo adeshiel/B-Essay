@@ -100,26 +100,20 @@ class makeNewEssay(object):
                 self.new_essay = self.new_essay + x + " "
 
         self.essay = self.new_essay.split()
-
+    # TODO: The function still considers names - fix that
+    # TODO: The function doesnt hit definition - fix that too
     def extendByDefinition(self):
         """ extends the word count of the essay by finding a rare-enough word and adding the definition """
         temp = ""
         ignore = []
-
+        pun = ""
         for x in range(len(self.essay)):
-            if(self.essay[x] in punctuation):
-                self.essay[x-1] += self.essay[x]
-                self.essay[x] = ''
-                continue
-
-            pun = ""
+            print(self.essay[x])
 
             if(self.essay[x][:-1] not in ignore or self.essay[x] not in names):
-                print("Before this point:", self.essay)
                 if(self.essay[x][-1] in punctuation):
                     pun = self.essay[x][-1]
                     self.essay[x] = self.essay[x][:-1]
-                    print("After this point:", self.essay)
                 ### Need to add pun back
 
                 ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
@@ -131,6 +125,7 @@ class makeNewEssay(object):
 
                 try:
                     freq = json.loads(ret1._raw_body)
+
                 except ValueError:
                     continue
 
@@ -143,24 +138,30 @@ class makeNewEssay(object):
                     )
 
                     defin = json.loads(ret2._raw_body)
-
-                    if('definition' in defin.keys()):
+                    if('definition' in defin['results'][0].keys()): ### definition won't be in defin's keys because defin['results'] is an array of ['definition']s
                         longest = ""
-                        for y in defin['results']:
-                            if(len(y['definition']) >= len(longest)):
-                                longest = y['definition']
-
-                        if(self.essay[x+1] in punctuation):
-                            temp = longest + self.essay[x+1]
+                        print("It gets there:", pun)
+                        if(len(defin['results']) == 1):
+                            longest = defin['results'][0]['definition']
+                            print(longest)
                         else:
-                            temp = longest +", "
+                            for y in defin['results']:
+                                if(len(y['definition']) >= len(longest)):
+                                    longest = y['definition']
 
-                        ignore.append(longest)
+                        if(pun != ""):
+                            temp = longest + pun # Correct
+                            pun = ""
+                        else:
+                            temp = longest +","
+
+                        ignore.append(temp)
 
                         self.essay[x] += ", or"
                         self.essay.insert(x+1, temp)
-                        self.essay.remove(self.essay[x+2])
-            self.essay[x] += pun
+
+                        #self.essay.remove(self.essay[x+2])
+                        #self.essay[x+2] += pun
 
     def grammarCheck(self):
         self.essay.separatePunct()
@@ -176,13 +177,17 @@ class makeNewEssay(object):
                 self.final_essay += y + " "
 
     def createEssay(self):
+        true_length = 0
+        for x in self.essay:
+            splt = x.split()
+            for y in splt:
+                true_length += 1
         while((len(self.essay)-self.essay.count(punctuation)) < self.word_target):
             self.pickLongestSynonym()
-            print(self.essay)
+            print("After syn:", self.essay)
             self.extendByDefinition()
-            print(self.essay)
-            #print(self.essay)
-        #return_essay = ' '.join(self.essay)
+            print("After def:", self.essay)
+
         self.joinEssay()
         return_essay = self.final_essay
         return return_essay
@@ -191,6 +196,6 @@ class makeNewEssay(object):
 
 
 #test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
-test = makeNewEssay("Abby is superbly kind.", 6, 5)
+test = makeNewEssay("Abby is superbly kind.", 6, 3)
 print(test.createEssay())
 #print(test.testingKey())
