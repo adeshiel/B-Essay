@@ -108,13 +108,16 @@ class makeNewEssay(object):
         ignore = []
         pun = ""
         for x in range(len(self.essay)):
-            print(self.essay[x])
-
-            if(self.essay[x][:-1] not in ignore or self.essay[x] not in names):
-                if(self.essay[x][-1] in punctuation):
+            print(self.essay[x] in ignore)
+            print(self.essay)
+            print("Ignore:", ignore)
+            print("Current: ", self.essay[x])
+            if(self.essay[x] not in ignore and self.essay[x][:-1] not in ignore and self.essay[x].title() not in names):
+                if(self.essay[x][-1] in punctuation): #### THE BUGGIE IS HERE
+                    print("Pls: ", self.essay)
                     pun = self.essay[x][-1]
                     self.essay[x] = self.essay[x][:-1]
-                ### Need to add pun back
+                    print("Help: ", self.essay)
 
                 ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
                     headers={
@@ -138,9 +141,8 @@ class makeNewEssay(object):
                     )
 
                     defin = json.loads(ret2._raw_body)
-                    if('definition' in defin['results'][0].keys()): ### definition won't be in defin's keys because defin['results'] is an array of ['definition']s
+                    if('definition' in defin['results'][0].keys()):
                         longest = ""
-                        print("It gets there:", pun)
                         if(len(defin['results']) == 1):
                             longest = defin['results'][0]['definition']
                             print(longest)
@@ -158,8 +160,10 @@ class makeNewEssay(object):
                         ignore.append(temp)
 
                         self.essay[x] += ", or"
+                        print("Check", self.essay)
                         self.essay.insert(x+1, temp)
-
+                else:
+                    self.essay[x] += pun
                         #self.essay.remove(self.essay[x+2])
                         #self.essay[x+2] += pun
 
@@ -185,8 +189,12 @@ class makeNewEssay(object):
         while((len(self.essay)-self.essay.count(punctuation)) < self.word_target):
             self.pickLongestSynonym()
             print("After syn:", self.essay)
+            test = " ".join(self.essay)
+            self.essay = test.split()
             self.extendByDefinition()
             print("After def:", self.essay)
+            test = " ".join(self.essay)
+            self.essay = test.split()
 
         self.joinEssay()
         return_essay = self.final_essay
