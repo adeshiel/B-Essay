@@ -3,6 +3,7 @@
 
 import json
 import unirest
+#import numpy as np
 from StringIO import StringIO
 from flask import Flask
 app = Flask(__name__)
@@ -13,20 +14,23 @@ name = open('names.txt', 'r')
 n = name.read()
 names = n.splitlines()
 
-#grammar
-punctuation = ["!", "?", ".", "!?", "?!", ","]
-indef_def_articles = ["the", "a", "an"]
-coord_conjuctions = ["and", "but", "for", "nor", "or", "so", "yet"]
-and_conjunctions = ["and","also", "besides", "furthermore", "likewise", "moreover"]
-but_conjunctions = ["but","however", "nevertheless", "nonetheless", "still","conversely","instead","otherwise","rather"]
-so_conjunctions = ["so","accordingly", "consequently", "hence", "meanwhile", "then","therefore","thus"]
-time_conjunctions = ["after","as long as", "as soon as", "before", "by the time", "now that", "once", "since", "till", "until", "when", "whenever", "while"]
-concession_conjunctions = ["though", "although", "even though", "while"]
-condition_conjunctions = ["if", "only if", "unless", "until", "provided that", "assuming that", "even if", "in case", "in case that", "lest"]
-comparison_conjunctions = ["than", "rather than", "whether", "as much as", "whereas"]
-reason_conjunctions = ["because", "since", "so that", "in order to", "in order that", "why"]
-manner_conjunctions = ["how","as though","as if"]
-place_conjunctions = ["where","wherever"]
+grammar = {
+'persons': ["I", "me", "we", "us", "he", "she", "it", "they", "them", "you", "you all"]
+,'punctuation': ["!", "?", ".", "!?", "?!", ","]
+,'indef_def_articles': ["the", "a", "an"]
+,'coord_conjuctions': ["and", "but", "for", "nor", "or", "so", "yet"]
+,'and': ["and","also", "besides", "furthermore", "likewise", "moreover"]
+,'but': ["but","however", "nevertheless", "nonetheless", "still","conversely","instead","otherwise","rather"]
+,'so': ["so","accordingly", "consequently", "hence", "meanwhile", "then","therefore","thus"]
+,'time_conjunctions': ["after","as long as", "as soon as", "before", "by the time", "now that", "once", "since", "till", "until", "when", "whenever", "while"]
+,'concession_conjunctions': ["though", "although", "even though", "while"]
+,'condition_conjunctions': ["if", "only if", "unless", "until", "provided that", "assuming that", "even if", "in case", "in case that", "lest"]
+,'comparison_conjunctions': ["than", "rather than", "whether", "as much as", "whereas"]
+,'reason_conjunctions': ["because", "since", "so that", "in order to", "in order that", "why"]
+,'manner_conjunctions': ["how","as though","as if"]
+,'place_conjunctions': ["where","wherever"]
+}
+
 
 
 @app.route('/')
@@ -42,7 +46,7 @@ class makeNewEssay(object):
         # TODO: Use a book or novel as a comparison, or something that would help it measure how legible it is
                 # i.e. check that nouns are next to verbs, or adverbs next to verbs - just basic grammar rules
                 # We can do this by looking in the partOfSpeech portion of the chosen definition
-
+        # TODO: Double check that it's comparing the lowercase of words(i.e. "the" == "The")
         self.separatePunct()
     #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; MAKE ANOTHER CASE FOR THIS
 
@@ -51,7 +55,7 @@ class makeNewEssay(object):
             can probably be optimized with insert or list comprehension """
         placeholder = []
         for z in self.essay:
-            if(z[-1] in punctuation and len(z) >= 2):
+            if(z[-1] in grammar['punctuation'] and len(z) >= 2):
                 placeholder.append(z[:-1])
                 placeholder.append(z[-1])
             else:
@@ -65,13 +69,14 @@ class makeNewEssay(object):
         it to the new essay """
         self.separatePunct()
         for x in self.essay:
-
-            if(x in punctuation):
+            if(x in grammar['persons']):
+                continue
+            if(x in grammar['punctuation']):
                 self.new_essay = self.new_essay[:-1] + x + " "
                 self.essay.remove(x)
                 continue
 
-            elif(x not in names):
+            elif(x not in names and x not in grammar['indef_def_articles']):
                 ret = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(x) +"/synonyms",
                     headers={
                         "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
@@ -107,8 +112,8 @@ class makeNewEssay(object):
         ignore = []
         pun = ""
         for x in range(len(self.essay)):
-            if(self.essay[x] not in ignore and self.essay[x][:-1] not in ignore and self.essay[x].title() not in names):
-                if(self.essay[x][-1] in punctuation):
+            if(self.essay[x] not in ignore and self.essay[x][:-1] not in ignore and self.essay[x].title() not in names and x not in grammar['indef_def_articles']):
+                if(self.essay[x][-1] in grammar['punctuation']):
                     pun = self.essay[x][-1]
                     self.essay[x] = self.essay[x][:-1]
 
@@ -162,11 +167,12 @@ class makeNewEssay(object):
     def grammarCheck(self):
         self.essay.separatePunct()
 
+
         print("")
 
     def joinEssay(self): #Do i need this?
         for y in self.essay:
-            if y in punctuation:
+            if y in grammar['punctuation']:
                 self.final_essay = self.final_essay[:-1] + y + " "
             else:
                 self.final_essay += y + " "
@@ -177,7 +183,7 @@ class makeNewEssay(object):
             splt = x.split()
             for y in splt:
                 true_length += 1
-        while((len(self.essay)-self.essay.count(punctuation)) < self.word_target):
+        while((len(self.essay)-self.essay.count(grammar['punctuation'])) < self.word_target):
             self.pickLongestSynonym()
             test = " ".join(self.essay)
             self.essay = test.split()
@@ -193,6 +199,6 @@ class makeNewEssay(object):
 
 
 #test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
-test = makeNewEssay("Peter Piper picked a pack of pickled peppers.", 10, 4)
+test = makeNewEssay("Adam has been a great friend.", 10, 4)
 print(test.createEssay())
 #print(test.testingKey())
