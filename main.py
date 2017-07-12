@@ -6,6 +6,8 @@ import unirest
 #import numpy as np
 from StringIO import StringIO
 from flask import Flask, render_template
+activate_this = 'C:\Users\ashde\Documents\Hacks\Personal\B-Essay\venv\Scripts\activate_this.py'
+execfile(activate_this, dict(__file__=activate_this))
 app = Flask(__name__)
 
 if __name__ == '__main__':
