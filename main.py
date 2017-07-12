@@ -5,9 +5,15 @@ import json
 import unirest
 #import numpy as np
 from StringIO import StringIO
-from flask import Flask
+from flask import Flask, render_template
 app = Flask(__name__)
 
+if __name__ == '__main__':
+    app.run(
+        debug=True,
+    )
+def index():
+    return render_template('index.html')
 # TODO: fully implement Flask
 
 name = open('names.txt', 'r')
