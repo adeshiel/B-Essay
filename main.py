@@ -3,17 +3,18 @@
 
 import json
 import unirest
+from collections import Counter
 #import numpy as np
 from StringIO import StringIO
 from flask import Flask, render_template
-activate_this = 'C:\Users\ashde\Documents\Hacks\Personal\B-Essay\venv\Scripts\activate_this.py'
-execfile(activate_this, dict(__file__=activate_this))
+
 app = Flask(__name__)
 
 if __name__ == '__main__':
     app.run(
         debug=True,
     )
+@app.route('/')
 def index():
     return render_template('index.html')
 # TODO: fully implement Flask
@@ -24,7 +25,7 @@ names = n.splitlines()
 
 grammar = {
 'persons': ["I", "me", "we", "us", "he", "she", "it", "they", "them", "you", "you all"]
-,'punctuation': ["!", "?", ".", "!?", "?!", ","]
+,'punctuation': ["!", "?", ".", "!?", "?!", ",", ":", "(", ")", "&", "'", "\"", ";"]
 ,'indef_def_articles': ["the", "a", "an"]
 ,'coord_conjuctions': ["and", "but", "for", "nor", "or", "so", "yet"]
 ,'and': ["and","also", "besides", "furthermore", "likewise", "moreover"]
@@ -41,12 +42,13 @@ grammar = {
 
 
 
-@app.route('/')
+@app.route("/essay")
 class makeNewEssay(object):
     """makes a really silly essay"""
     def __init__(self, essay, word_target, rarity):
         self.essay = essay.split()
         self.new_essay = ""
+        self.def_holder = ""
         self.final_essay = ""
         self.word_target = word_target
         self.rarity = rarity
@@ -55,6 +57,7 @@ class makeNewEssay(object):
                 # i.e. check that nouns are next to verbs, or adverbs next to verbs - just basic grammar rules
                 # We can do this by looking in the partOfSpeech portion of the chosen definition
         # TODO: Double check that it's comparing the lowercase of words(i.e. "the" == "The")
+        # TODO: ACTIVATE BABY MODE
         self.separatePunct()
     #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; MAKE ANOTHER CASE FOR THIS
 
@@ -100,30 +103,32 @@ class makeNewEssay(object):
                     new_word = response['synonyms'][0]
                     if(len(response['synonyms']) > 1):
                         longest = new_word
-                        for y in response['synonyms']:
-                            if(len(y) >= longest):
-                                longest = y
+                        if((max(response['synonyms'], key=len) > longest)):
+                            longest = max(list(response['synonyms']), key=len)
+
                         self.new_essay = self.new_essay + longest + " "
+
                     else:
                         self.new_essay = self.new_essay + new_word + " "
+
                 else:
                     self.new_essay = self.new_essay + x + " "
             else:
                 self.new_essay = self.new_essay + x + " "
 
-        self.essay = self.new_essay.split()
+        self.essay = self.new_essay.split() #split it so it can be worked on
 
 
     def extendByDefinition(self):
         """ extends the word count of the essay by finding a rare-enough word and adding the definition """
-        temp = ""
+        temp, pun = "", ""
         ignore = []
-        pun = ""
+
         for x in range(len(self.essay)):
-            if(self.essay[x] not in ignore and self.essay[x][:-1] not in ignore and self.essay[x].title() not in names and x not in grammar['indef_def_articles']):
-                if(self.essay[x][-1] in grammar['punctuation']):
-                    pun = self.essay[x][-1]
-                    self.essay[x] = self.essay[x][:-1]
+            if(self.essay[x] not in grammar['punctuation'] and self.essay[x] not in ignore and self.essay[x][:-1] not in ignore and self.essay[x].title() not in names and self.essay[x] not in grammar['indef_def_articles']):
+                if(x != (len(self.essay)-1) and self.essay[x+1] in grammar['punctuation']):
+                    pun = self.essay[x+1]
+                    #self.essay[x] = self.essay[x][:-1]
 
                 ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
                     headers={
@@ -152,15 +157,16 @@ class makeNewEssay(object):
                         if(len(defin['results']) == 1):
                             longest = defin['results'][0]['definition']
                         else:
+                            #longest = (max(list(defin['results']['definition']), key=len))
                             for y in defin['results']:
                                 if(len(y['definition']) >= len(longest)):
                                     longest = y['definition']
 
                         if(pun != ""):
-                            temp = longest + pun # Correct
+                            temp = longest # Correct
                             pun = ""
                         else:
-                            temp = longest +","
+                            temp = longest + ","
 
                         ignore.append(temp)
 
@@ -170,13 +176,15 @@ class makeNewEssay(object):
                     self.essay[x] += pun
                         #self.essay.remove(self.essay[x+2])
                         #self.essay[x+2] += pun
-
     # TODO: implement grammar rules
     def grammarCheck(self):
-        self.essay.separatePunct()
-
-
-        print("")
+        for w in range(len(self.essay)):
+                if self.essay[w] == "a" and w != (len(self.essay) - 1):
+                    if self.essay[w+1][0] in ["a", "e", "i", "o", "u", "A", "E", "I", "O", "U"]:
+                        self.essay[w] = "an"
+                if self.essay[w] == "an" and w != (len(self.essay) - 1):
+                    if self.essay[w+1][0] not in ["a", "e", "i", "o", "u", "A", "E", "I", "O", "U"]:
+                        self.essay[w] = "a"
 
     def joinEssay(self): #Do i need this?
         for y in self.essay:
@@ -186,18 +194,23 @@ class makeNewEssay(object):
                 self.final_essay += y + " "
 
     def createEssay(self):
-        true_length = 0
-        for x in self.essay:
-            splt = x.split()
-            for y in splt:
-                true_length += 1
-        while((len(self.essay)-self.essay.count(grammar['punctuation'])) < self.word_target):
+        pun_length = len(list((Counter(grammar['punctuation']) & Counter(self.essay)).elements()))
+
+        while((len(self.final_essay)-pun_length) < self.word_target):
+            print("(P1) The current length is " + str((len(self.final_essay)-pun_length)))
             self.pickLongestSynonym()
-            test = " ".join(self.essay)
-            self.essay = test.split()
+            self.separatePunct()
+            self.grammarCheck()
+
+            if((len(self.essay)-pun_length) > self.word_target):
+                self.final_essay = self.essay
+                break
+
             self.extendByDefinition()
-            test = " ".join(self.essay)
-            self.essay = test.split()
+            self.grammarCheck()
+            print("(P2) The current length is " + str((len(self.final_essay)-pun_length)))
+            self.joinEssay()
+            self.separatePunct()
 
         self.joinEssay()
         return_essay = self.final_essay
@@ -207,6 +220,6 @@ class makeNewEssay(object):
 
 
 #test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
-test = makeNewEssay("Adam has been a great friend.", 10, 4)
+test = makeNewEssay("Adam has been a great friend.", 7, 6)
 print(test.createEssay())
 #print(test.testingKey())
