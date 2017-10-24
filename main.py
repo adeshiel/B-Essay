@@ -1,23 +1,28 @@
 # Main functions
 #Python 2.7
 
+#!/usr/bin/env python2
+
 import json
-import unirest
+import unirest # only runs python 2.7
 from collections import Counter
 #import numpy as np
 from StringIO import StringIO
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
-if __name__ == '__main__':
-    app.run(
-        debug=True,
-    )
-@app.route('/')
+#if __name__ == '__main__':
+#    app.run(
+#        debug=True,
+#    )
+
+@app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template("index.html")
 # TODO: fully implement Flask
+
+
 
 name = open('names.txt', 'r')
 n = name.read()
@@ -40,26 +45,46 @@ grammar = {
 ,'place_conjunctions': ["where","wherever"]
 }
 
-
-
-@app.route("/essay")
+@app.route("/<essay>")
 class makeNewEssay(object):
     """makes a really silly essay"""
-    def __init__(self, essay, word_target, rarity):
-        self.essay = essay.split()
+    #def __init__(self, essay, word_target, rarity):
+    def __init__(self):
+    #    self.essay = essay.split()
         self.new_essay = ""
         self.def_holder = ""
         self.final_essay = ""
-        self.word_target = word_target
-        self.rarity = rarity
+    #    self.word_target = word_target
+    #    self.rarity = rarity
+        self.return_essay = ""
         # TODO: Maybe move the API call so that it doesn't run too many times, or add more checks before the call
         # TODO: Use a book or novel as a comparison, or something that would help it measure how legible it is
                 # i.e. check that nouns are next to verbs, or adverbs next to verbs - just basic grammar rules
                 # We can do this by looking in the partOfSpeech portion of the chosen definition
         # TODO: Double check that it's comparing the lowercase of words(i.e. "the" == "The")
         # TODO: ACTIVATE BABY MODE
-        self.separatePunct()
-    #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; MAKE ANOTHER CASE FOR THIS
+
+    def __repr__(self):
+        print("Please input your essay:")
+        self.essay = raw_input().split()
+        print("Your essay is: ", self.essay)
+
+        print("How long does your essay need to be?")
+        self.word_target = int(input())
+
+        print("On a scale of 1 to 5, 5 being the most common, how rare should the changed words be?")
+        self.rarity = int(input())
+        assert((self.rarity >= 1) and (self.rarity <= 5)), "Outside of range!"
+
+        print("Okay! One moment please.")
+        #self.essay = self.essay.split()
+
+        return self.createEssay()
+
+
+
+
+        #KEEP IN MIND THAT "?!" AND "!?" ARE MORE THAN THE INDEX OF -1; MAKE ANOTHER CASE FOR THIS
 
     def separatePunct(self):
         """ Separates the punctuation from the string and places it next in the list,
@@ -171,11 +196,21 @@ class makeNewEssay(object):
                         ignore.append(temp)
 
                         self.essay[x] += ", or"
-                        self.essay.insert(x+1, temp)
+
+                        check = temp.split()
+
+                        self.essay[x+1:x+1] = check
+                        print(self.essay)
+
+                        #self.essay.insert(x+1, temp)
+                        #TODO: here we go boys we just need to get this to be inserted as a split list since
+                                #it goes in as one long string and counts it as one
                 else:
                     self.essay[x] += pun
+                    pun = ""
                         #self.essay.remove(self.essay[x+2])
                         #self.essay[x+2] += pun
+
     # TODO: implement grammar rules
     def grammarCheck(self):
         for w in range(len(self.essay)):
@@ -187,20 +222,26 @@ class makeNewEssay(object):
                         self.essay[w] = "a"
 
     def joinEssay(self): #Do i need this?
+        self.final_essay = ""
         for y in self.essay:
-            if y in grammar['punctuation']:
+            if y[-1] in grammar['punctuation']:
                 self.final_essay = self.final_essay[:-1] + y + " "
             else:
                 self.final_essay += y + " "
 
+    @app.route("/<essay>/new")
     def createEssay(self):
+        # TODO: Fix inconsistency with using final_essay and normal essay
+        #self.separatePunct()
         pun_length = len(list((Counter(grammar['punctuation']) & Counter(self.essay)).elements()))
 
-        while((len(self.final_essay)-pun_length) < self.word_target):
-            print("(P1) The current length is " + str((len(self.final_essay)-pun_length)))
+        while((len(self.final_essay)) < self.word_target):
+            print("(P1) " + str(self.essay))
             self.pickLongestSynonym()
             self.separatePunct()
             self.grammarCheck()
+            self.joinEssay()
+
 
             if((len(self.essay)-pun_length) > self.word_target):
                 self.final_essay = self.essay
@@ -208,9 +249,10 @@ class makeNewEssay(object):
 
             self.extendByDefinition()
             self.grammarCheck()
-            print("(P2) The current length is " + str((len(self.final_essay)-pun_length)))
-            self.joinEssay()
+            print("(P2) " + str(self.essay))
             self.separatePunct()
+            self.joinEssay()
+
 
         self.joinEssay()
         return_essay = self.final_essay
@@ -220,6 +262,6 @@ class makeNewEssay(object):
 
 
 #test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
-test = makeNewEssay("Adam has been a great friend.", 7, 6)
-print(test.createEssay())
+test = makeNewEssay()
+print(test)
 #print(test.testingKey())
