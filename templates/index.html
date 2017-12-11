@@ -1,33 +1,32 @@
-{% extends 'base.html' %}
-{% block body %}
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="http://getbootstrap.com/examples/starter-template/#">Project name</a>
-        </div>
-        <div id="navbar" class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="http://getbootstrap.com/examples/starter-template/#">Home</a></li>
-            <li><a href="http://getbootstrap.com/examples/starter-template/#about">About</a></li>
-            <li><a href="http://getbootstrap.com/examples/starter-template/#contact">Contact</a></li>
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
-    </nav>
+<html>
+<head>
+<title>B-Essay's Site</title>
+<link rel="stylesheet" href="assets/main.css">
+<link href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet">
 
-    <div class="container">
+</head>
+<body>
+  <h1> Welcome to B-Essay! </h1>
 
-      <div class="starter-template">
-        <h1>Bootstrap starter template</h1>
-        <p class="lead">Use this document as a way to quickly start any new project.<br> All you get is this text and a mostly barebones HTML document.</p>
-      </div>
+    <form action="/" method="POST">
 
-    </div><!-- /.container -->
+      How many words do you need? (max 1000):
+        <input type="number" name="word_count" min="2" max="1000"> <br>
 
-{% endblock %}
+      How common should the changed words be? (on a scale of 1-5, 5 being the most common):
+        <input type="number" name="rare" min="1" max="5"> <br>
+
+      Please input your essay below!<br>
+        <textarea type="text" name="essay" cols="80" rows="10"> Pssst... Your essay goes here!</textarea><br>
+
+        <input type="submit" name="my-form" value="Send"><input type="reset" value="Clear All">
+    </form>
+
+<br>
+
+
+</body>
+
+
+
+</html>

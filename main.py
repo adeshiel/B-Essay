@@ -9,6 +9,7 @@ from collections import Counter
 #import numpy as np
 from StringIO import StringIO
 from flask import Flask, render_template, jsonify, request
+from key import MASH_KEY
 
 app = Flask(__name__)
 
@@ -18,10 +19,17 @@ app = Flask(__name__)
 #    )
 
 @app.route("/")
-def index():
+def homepage():
     return render_template("index.html")
 # TODO: fully implement Flask
 
+@app.route("/", methods=['POST'])
+def get_essay():
+    text = request.form['essay']
+    wrd_cnt = request.form['word_count']
+    rare = request.form['rare']
+    retu = makeNewEssay(text, wrd_cnt, rare)
+    return render_template("essay.html", essay=retu)
 
 
 name = open('names.txt', 'r')
@@ -31,6 +39,7 @@ names = n.splitlines()
 grammar = {
 'persons': ["I", "me", "we", "us", "he", "she", "it", "they", "them", "you", "you all"]
 ,'punctuation': ["!", "?", ".", "!?", "?!", ",", ":", "(", ")", "&", "'", "\"", ";"]
+,'end_punct': ["!", "?", "."]
 ,'indef_def_articles': ["the", "a", "an"]
 ,'coord_conjuctions': ["and", "but", "for", "nor", "or", "so", "yet"]
 ,'and': ["and","also", "besides", "furthermore", "likewise", "moreover"]
@@ -48,14 +57,14 @@ grammar = {
 @app.route("/<essay>")
 class makeNewEssay(object):
     """makes a really silly essay"""
-    #def __init__(self, essay, word_target, rarity):
-    def __init__(self):
-    #    self.essay = essay.split()
+    def __init__(self, essay, word_target, rarity):
+    #def __init__(self):
+        self.essay = essay.split()
         self.new_essay = ""
         self.def_holder = ""
         self.final_essay = ""
-    #    self.word_target = word_target
-    #    self.rarity = rarity
+        self.word_target = word_target
+        self.rarity = rarity
         self.return_essay = ""
         # TODO: Maybe move the API call so that it doesn't run too many times, or add more checks before the call
         # TODO: Use a book or novel as a comparison, or something that would help it measure how legible it is
@@ -65,18 +74,18 @@ class makeNewEssay(object):
         # TODO: ACTIVATE BABY MODE
 
     def __repr__(self):
-        print("Please input your essay:")
-        self.essay = raw_input().split()
-        print("Your essay is: ", self.essay)
+#        print("Please input your essay:")
+#        self.essay = raw_input().split()
+#        print("Your essay is: ", self.essay)
 
-        print("How long does your essay need to be?")
-        self.word_target = int(input())
+#        print("How long does your essay need to be?")
+#        self.word_target = int(input())
 
-        print("On a scale of 1 to 5, 5 being the most common, how rare should the changed words be?")
-        self.rarity = int(input())
-        assert((self.rarity >= 1) and (self.rarity <= 5)), "Outside of range!"
+#        print("On a scale of 1 to 5, 5 being the most common, how rare should the changed words be?")
+#        self.rarity = int(input())
+#        assert((self.rarity >= 1) and (self.rarity <= 5)), "Outside of range!"
 
-        print("Okay! One moment please.")
+#        print("Okay! One moment please.")
         #self.essay = self.essay.split()
 
         return self.createEssay()
@@ -105,20 +114,19 @@ class makeNewEssay(object):
         it to the new essay """
         self.separatePunct()
         for x in self.essay:
-            if(x in grammar['persons']):
-                continue
-            if(x in grammar['punctuation']):
+            print("x is: ", x)
+            if(x in grammar['punctuation'] or x in grammar['persons'] or x in names or x in grammar['indef_def_articles']):
                 self.new_essay = self.new_essay[:-1] + x + " "
-                self.essay.remove(x)
                 continue
 
-            elif(x not in names and x not in grammar['indef_def_articles']):
+            else:
                 ret = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(x) +"/synonyms",
                     headers={
-                        "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
+                        "X-Mashape-Key": MASH_KEY,
                         "Accept": "application/json"
                     }
                 )
+
                 try:
                     response = json.loads(ret._raw_body)
                 except ValueError:
@@ -138,8 +146,8 @@ class makeNewEssay(object):
 
                 else:
                     self.new_essay = self.new_essay + x + " "
-            else:
-                self.new_essay = self.new_essay + x + " "
+            # else:
+            #     self.new_essay = self.new_essay + x + " "
 
         self.essay = self.new_essay.split() #split it so it can be worked on
 
@@ -153,11 +161,12 @@ class makeNewEssay(object):
             if(self.essay[x] not in grammar['punctuation'] and self.essay[x] not in ignore and self.essay[x][:-1] not in ignore and self.essay[x].title() not in names and self.essay[x] not in grammar['indef_def_articles']):
                 if(x != (len(self.essay)-1) and self.essay[x+1] in grammar['punctuation']):
                     pun = self.essay[x+1]
+                    self.essay.remove(self.essay[x+1])
                     #self.essay[x] = self.essay[x][:-1]
 
                 ret1 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]) + "/frequency",
                     headers={
-                        "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
+                        "X-Mashape-Key": MASH_KEY,
                         "Accept": "application/json"
                     }
                 )
@@ -171,7 +180,7 @@ class makeNewEssay(object):
                 if('frequency' in freq.keys() and freq['frequency']['zipf'] <= self.rarity): # ranged 1-7, 1 being very rare and 7 being normal
                     ret2 = unirest.get("https://wordsapiv1.p.mashape.com/words/" +str(self.essay[x]),
                         headers={
-                            "X-Mashape-Key": "o4BB4YatyVmshNlvtMFsZNXCDPcmp1u8RNQjsnb2RscDXVMK0f",
+                            "X-Mashape-Key": MASH_KEY,
                             "Accept": "application/json"
                         }
                     )
@@ -196,11 +205,12 @@ class makeNewEssay(object):
                         ignore.append(temp)
 
                         self.essay[x] += ", or"
-
+                        print("Temp: ", temp)
                         check = temp.split()
-
+                        print("B4: ", self.essay)
                         self.essay[x+1:x+1] = check
-                        print(self.essay)
+                        print("A4: ", self.essay)
+
 
                         #self.essay.insert(x+1, temp)
                         #TODO: here we go boys we just need to get this to be inserted as a split list since
@@ -220,6 +230,10 @@ class makeNewEssay(object):
                 if self.essay[w] == "an" and w != (len(self.essay) - 1):
                     if self.essay[w+1][0] not in ["a", "e", "i", "o", "u", "A", "E", "I", "O", "U"]:
                         self.essay[w] = "a"
+                if w == 0 or (w > 0 and self.essay[w - 1] in grammar['end_punct']):
+                    print("B: ", self.essay[w])
+                    self.essay[w] = self.essay[w].title()
+                    print("A: ", self.essay[w].title())
 
     def joinEssay(self): #Do i need this?
         self.final_essay = ""
@@ -239,6 +253,7 @@ class makeNewEssay(object):
             print("(P1) " + str(self.essay))
             self.pickLongestSynonym()
             self.separatePunct()
+            print("(P2) " + str(self.essay))
             self.grammarCheck()
             self.joinEssay()
 
@@ -249,7 +264,7 @@ class makeNewEssay(object):
 
             self.extendByDefinition()
             self.grammarCheck()
-            print("(P2) " + str(self.essay))
+            print("(P3) " + str(self.essay))
             self.separatePunct()
             self.joinEssay()
 
@@ -261,7 +276,7 @@ class makeNewEssay(object):
 #!!! End of class !!!
 
 
-#test = makeNewEssay("King Henry won the throne when his force defeated King Richard III at the Battle of Bosworth Field, the culmination of the Wars of Roses.", 50)
-test = makeNewEssay()
+test = makeNewEssay("Agustin hurt his pee pee! Please, take him to the doctor. Tell me what they say.", 25, 3)
+#test = makeNewEssay()
 print(test)
 #print(test.testingKey())
