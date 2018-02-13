@@ -1,8 +1,8 @@
 <html>
 <head>
 <title>B-Essay's Site</title>
-<link rel="stylesheet" href="assets/main.css">
-<link href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 
 </head>
 <body>
@@ -15,7 +15,7 @@
 
       How common should the changed words be? (on a scale of 1-5, 5 being the most common):
         <input type="number" name="rare" min="1" max="5"> <br>
-
+        <br>
       Please input your essay below!<br>
         <textarea type="text" name="essay" cols="80" rows="10"> Pssst... Your essay goes here!</textarea><br>
 
@@ -23,10 +23,11 @@
     </form>
 
 <br>
+<br>
+
+{{essay}}
 
 
 </body>
-
-
 
 </html>

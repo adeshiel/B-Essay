@@ -245,7 +245,6 @@ class makeNewEssay(object):
         while ((((len(self.final_essay)) - pun_length) < self.word_target) and (((len(self.essay)) - pun_length) < self.word_target)):
             loopnum +=1
             print("Start loop " + str(loopnum) + ": [final essay length]: " + str(len(self.final_essay)) + " [essay length]: " + str(len(self.essay)))
-            #TODO: while loop won't stop. find out why.
 
             pun_length = len(list((Counter(grammar['punctuation']) & Counter(self.essay)).elements()))
             print("(P1) " + str(self.essay))

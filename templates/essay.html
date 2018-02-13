@@ -1,14 +1,34 @@
 <html>
 <head>
 <title>B-Essay's Site</title>
-<link rel="stylesheet" href="assets/main.css">
-<link href="https://fonts.googleapis.com/css?family=Titillium+Web" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
 
 </head>
 <body>
-<p>
+  <h1> Welcome to B-Essay! </h1>
+
+    <form action="/essay" method="POST">
+
+      How many words do you need? (max 1000):
+        <input type="number" name="word_count" min="2" max="1000"> <br>
+
+      How common should the changed words be? (on a scale of 1-5, 5 being the most common):
+        <input type="number" name="rare" min="1" max="5"> <br>
+        <br>
+      Please input your essay below!<br>
+        <textarea type="text" name="essay" cols="80" rows="10"> Pssst... Your essay goes here!</textarea><br>
+
+        <input type="submit" name="my-form" value="Send"><input type="reset" value="Clear All">
+    </form>
+
+<br>
+<br>
+
+<div class="project-text">
+
 {{essay}}
-</p>
+
+</div>
 
 </body>
-</html>
