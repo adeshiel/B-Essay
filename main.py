@@ -23,7 +23,7 @@ def homepage():
     return render_template("index.html")
 # TODO: fully implement Flask
 
-@app.route("/", methods=['POST'])
+@app.route("/essay", methods=['GET', 'POST'])
 def get_essay():
     text = request.form['essay']
     wrd_cnt = request.form['word_count']
@@ -63,8 +63,8 @@ class makeNewEssay(object):
         self.new_essay = ""
         self.def_holder = ""
         self.final_essay = ""
-        self.word_target = word_target
-        self.rarity = rarity
+        self.word_target = int(word_target)
+        self.rarity = int(rarity)
         self.return_essay = ""
         # TODO: Maybe move the API call so that it doesn't run too many times, or add more checks before the call
         # TODO: Use a book or novel as a comparison, or something that would help it measure how legible it is
@@ -114,7 +114,7 @@ class makeNewEssay(object):
         it to the new essay """
         self.separatePunct()
         for x in self.essay:
-            print("x is: ", x)
+            #print("x is: ", x)
             if(x in grammar['punctuation'] or x in grammar['persons'] or x in names or x in grammar['indef_def_articles']):
                 self.new_essay = self.new_essay[:-1] + x + " "
                 continue
@@ -132,7 +132,7 @@ class makeNewEssay(object):
                 except ValueError:
                     continue
 
-                if(len(response['synonyms']) != 0):
+                if(('synonyms' in response.keys()) and len(response['synonyms']) != 0):
                     new_word = response['synonyms'][0]
                     if(len(response['synonyms']) > 1):
                         longest = new_word
@@ -143,11 +143,8 @@ class makeNewEssay(object):
 
                     else:
                         self.new_essay = self.new_essay + new_word + " "
-
                 else:
                     self.new_essay = self.new_essay + x + " "
-            # else:
-            #     self.new_essay = self.new_essay + x + " "
 
         self.essay = self.new_essay.split() #split it so it can be worked on
 
@@ -186,7 +183,7 @@ class makeNewEssay(object):
                     )
 
                     defin = json.loads(ret2._raw_body)
-                    if('definition' in defin['results'][0].keys()):
+                    if('results' in defin.keys() and 'definition' in defin['results'][0].keys()):
                         longest = ""
                         if(len(defin['results']) == 1):
                             longest = defin['results'][0]['definition']
@@ -205,11 +202,8 @@ class makeNewEssay(object):
                         ignore.append(temp)
 
                         self.essay[x] += ", or"
-                        print("Temp: ", temp)
                         check = temp.split()
-                        print("B4: ", self.essay)
                         self.essay[x+1:x+1] = check
-                        print("A4: ", self.essay)
 
 
                         #self.essay.insert(x+1, temp)
@@ -231,9 +225,7 @@ class makeNewEssay(object):
                     if self.essay[w+1][0] not in ["a", "e", "i", "o", "u", "A", "E", "I", "O", "U"]:
                         self.essay[w] = "a"
                 if w == 0 or (w > 0 and self.essay[w - 1] in grammar['end_punct']):
-                    print("B: ", self.essay[w])
                     self.essay[w] = self.essay[w].title()
-                    print("A: ", self.essay[w].title())
 
     def joinEssay(self): #Do i need this?
         self.final_essay = ""
@@ -247,26 +239,35 @@ class makeNewEssay(object):
     def createEssay(self):
         # TODO: Fix inconsistency with using final_essay and normal essay
         #self.separatePunct()
-        pun_length = len(list((Counter(grammar['punctuation']) & Counter(self.essay)).elements()))
 
-        while((len(self.final_essay)) < self.word_target):
+        pun_length = len(list((Counter(grammar['punctuation']) & Counter(self.essay)).elements()))
+        loopnum = 0
+        while ((((len(self.final_essay)) - pun_length) < self.word_target) and (((len(self.essay)) - pun_length) < self.word_target)):
+            loopnum +=1
+            print("Start loop " + str(loopnum) + ": [final essay length]: " + str(len(self.final_essay)) + " [essay length]: " + str(len(self.essay)))
+            #TODO: while loop won't stop. find out why.
+
+            pun_length = len(list((Counter(grammar['punctuation']) & Counter(self.essay)).elements()))
             print("(P1) " + str(self.essay))
             self.pickLongestSynonym()
+            pun_length = len(list((Counter(grammar['punctuation']) & Counter(self.essay)).elements()))
+            print("Current length [1]: ", (len(self.essay) - pun_length), " Word Target: ", self.word_target)
             self.separatePunct()
-            print("(P2) " + str(self.essay))
+
             self.grammarCheck()
-            self.joinEssay()
+            #self.joinEssay()
+            print("(P2) " + str(self.final_essay))
 
-
-            if((len(self.essay)-pun_length) > self.word_target):
-                self.final_essay = self.essay
+            if(((len(self.final_essay)-pun_length) >= self.word_target) or (len(self.essay)-pun_length) >= self.word_target) :
                 break
 
             self.extendByDefinition()
+            pun_length = len(list((Counter(grammar['punctuation']) & Counter(self.essay)).elements()))
+            print("Current length [2]: ", (len(self.final_essay) - pun_length))
             self.grammarCheck()
-            print("(P3) " + str(self.essay))
             self.separatePunct()
-            self.joinEssay()
+            #self.joinEssay()
+            print("(P3) " + str(self.final_essay))
 
 
         self.joinEssay()
@@ -276,7 +277,7 @@ class makeNewEssay(object):
 #!!! End of class !!!
 
 
-test = makeNewEssay("Agustin hurt his pee pee! Please, take him to the doctor. Tell me what they say.", 25, 3)
+#test = makeNewEssay("Agustin hurt his pee pee! Please, take him to the doctor. Tell me what they say.", 25, 3)
 #test = makeNewEssay()
-print(test)
+#print(test)
 #print(test.testingKey())
