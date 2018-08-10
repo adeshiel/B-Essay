@@ -24,7 +24,7 @@ Self explanatory. Copy-paste the essay into the textarea shown. Planning to impl
 ## Resources Used
 
 - Python 2.7
-- Flask
+- [Flask](http://flask.pocoo.org/)
 - [Words API](https://www.wordsapi.com/)
 - HTML
 - CSS
